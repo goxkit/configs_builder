@@ -8,9 +8,9 @@
 package configsbuilder
 
 import (
+	"github.com/goxkit/configs"
+	"github.com/goxkit/logging"
 	"github.com/joho/godotenv"
-	"github.com/ralvescosta/gokit/configs"
-	"github.com/ralvescosta/gokit/logging"
 	"go.uber.org/zap"
 
 	"github.com/goxkit/configs_builder/errors"

@@ -10,8 +10,8 @@ package internal
 import (
 	"os"
 
+	"github.com/goxkit/configs"
 	keys "github.com/goxkit/configs_builder/keys"
-	"github.com/ralvescosta/gokit/configs"
 )
 
 // ReadEnvironment determines the current runtime environment (development, staging, production)

@@ -1,4 +1,4 @@
-# Configs Builder
+# Gokit Configs Builder
 
 [![GoDoc](https://godoc.org/github.com/goxkit/configs_builder?status.svg)](https://godoc.org/github.com/goxkit/configs_builder)
 
@@ -30,7 +30,7 @@ go get github.com/goxkit/configs_builder
 package main
 
 import (
-	"github.com/ralvescosta/gokit/configs"
+	"github.com/goxkit/configs"
 	configsbuilder "github.com/goxkit/configs_builder"
 )
 

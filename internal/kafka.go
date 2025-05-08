@@ -8,9 +8,9 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/goxkit/configs"
 	"github.com/goxkit/configs_builder/errors"
 	"github.com/goxkit/configs_builder/keys"
-	"github.com/ralvescosta/gokit/configs"
 )
 
 // ReadKafkaConfigs retrieves Kafka connection configuration from environment variables.

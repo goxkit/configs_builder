@@ -8,8 +8,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/goxkit/configs"
 	"github.com/goxkit/configs_builder/keys"
-	"github.com/ralvescosta/gokit/configs"
 )
 
 // ReadMQTTConfigs retrieves MQTT connection configuration from environment variables.

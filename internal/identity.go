@@ -8,9 +8,9 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/goxkit/configs"
 	"github.com/goxkit/configs_builder/errors"
 	"github.com/goxkit/configs_builder/keys"
-	"github.com/ralvescosta/gokit/configs"
 )
 
 // ReadIdentityConfigs retrieves authentication and identity-related configuration from environment variables.

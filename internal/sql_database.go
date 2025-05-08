@@ -8,9 +8,9 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/goxkit/configs"
 	"github.com/goxkit/configs_builder/errors"
 	keys "github.com/goxkit/configs_builder/keys"
-	"github.com/ralvescosta/gokit/configs"
 )
 
 // ReadSQLDatabaseConfigs retrieves SQL database configuration from environment variables.

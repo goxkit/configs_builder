@@ -7,8 +7,8 @@ package internal
 import (
 	"os"
 
+	"github.com/goxkit/configs"
 	keys "github.com/goxkit/configs_builder/keys"
-	"github.com/ralvescosta/gokit/configs"
 )
 
 // ReadMetricsConfigs retrieves metrics collection configuration from environment variables.

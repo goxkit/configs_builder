@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/goxkit/configs"
 	"github.com/goxkit/configs_builder/errors"
 	keys "github.com/goxkit/configs_builder/keys"
-	"github.com/ralvescosta/gokit/configs"
 )
 
 // ReadHTTPConfigs retrieves and validates HTTP server configuration from environment variables.

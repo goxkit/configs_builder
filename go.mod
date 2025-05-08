@@ -4,11 +4,10 @@ go 1.24.2
 
 toolchain go1.24.3
 
-require github.com/ralvescosta/gokit/configs v1.21.0
-
 require (
+	github.com/goxkit/configs v0.0.0-20250508205347-5d3cd3f9e2ae
+	github.com/goxkit/logging v0.0.0-20250508205903-d375823178c1
 	github.com/joho/godotenv v1.5.1
-	github.com/ralvescosta/gokit/logging v1.33.0
 	go.uber.org/zap v1.27.0
 )
 
@@ -21,4 +20,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/ralvescosta/gokit/configs => ../configs
+// replace github.com/goxkit/configs => ../configs

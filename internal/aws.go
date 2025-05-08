@@ -4,7 +4,7 @@
 
 package internal
 
-import "github.com/ralvescosta/gokit/configs"
+import "github.com/goxkit/configs"
 
 // ReadAWSConfigs retrieves AWS configuration from environment variables.
 // Currently a placeholder that will be implemented in future versions to provide
