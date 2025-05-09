@@ -1,6 +1,19 @@
 # Gokit Configs Builder
 
-[![GoDoc](https://godoc.org/github.com/goxkit/configs_builder?status.svg)](https://godoc.org/github.com/goxkit/configs_builder)
+<p align="center">
+  <a href="https://github.com/goxkit/configs_builder/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License">
+  </a>
+  <a href="https://pkg.go.dev/github.com/goxkit/configs_builder">
+    <img src="https://godoc.org/github.com/goxkit/configs_builder?status.svg" alt="Go Doc">
+  </a>
+  <a href="https://goreportcard.com/report/github.com/goxkit/configs_builder">
+    <img src="https://goreportcard.com/badge/github.com/goxkit/configs_builder" alt="Go Report Card">
+  </a>
+  <a href="https://github.com/goxkit/configs_builder/actions">
+    <img src="https://github.com/goxkit/configs_builder/actions/workflows/action.yml/badge.svg?branch=main" alt="Build Status">
+  </a>
+</p>
 
 The `configs_builder` package provides a fluent interface for building application configurations in Go applications. It simplifies the process of loading configurations from environment variables and `.env` files for various components such as HTTP servers, databases, messaging systems, and more.
 
