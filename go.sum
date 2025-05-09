@@ -1,9 +1,9 @@
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/goxkit/configs v0.1.0 h1:NQygAug/VAergGmzNEgBTlyQwuEOFvXsP08G0BotAe8=
-github.com/goxkit/configs v0.1.0/go.mod h1:ZkpBs3TirjXTcJ8XkA03/LJ7rwiUjD8r1Czo3OiFEf4=
-github.com/goxkit/logging v0.1.0 h1:pYeTzqzVsF71JPc3TvX6t4XEFJQ8XPR8aEIQrXrEpG0=
-github.com/goxkit/logging v0.1.0/go.mod h1:f68g3tiKnIRv+KaQ65WrmBE1k8DIM9cA/wjkiv84Wkc=
+github.com/goxkit/configs v0.2.1 h1:PWGavXO/uzHmJvSzuUNb2v5csyGD7Y/o9Rx73Jy5AMA=
+github.com/goxkit/configs v0.2.1/go.mod h1:ZkpBs3TirjXTcJ8XkA03/LJ7rwiUjD8r1Czo3OiFEf4=
+github.com/goxkit/logging v0.1.1 h1:po8OGnKIPYZ0OvtttXfeX433m5kLCLpR8I6v6aCmzxE=
+github.com/goxkit/logging v0.1.1/go.mod h1:f68g3tiKnIRv+KaQ65WrmBE1k8DIM9cA/wjkiv84Wkc=
 github.com/joho/godotenv v1.5.1 h1:7eLL/+HRGLY0ldzfGMeQkb7vMd0as4CfYvUVzLqw0N0=
 github.com/joho/godotenv v1.5.1/go.mod h1:f4LDr5Voq0i2e/R5DDNOoa2zzDfwtkZa6DnEwAbqwq4=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

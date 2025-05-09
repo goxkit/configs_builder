@@ -146,7 +146,7 @@ func (b *configsBuilder) Build() (*configs.Configs, error) {
 		return nil, err
 	}
 
-	cfgs.Logger = logger.(*zap.Logger).Sugar()
+	cfgs.Logger = logger.(*zap.Logger)
 
 	// Load component-specific configurations based on what was enabled
 	if b.http {

@@ -5,8 +5,8 @@ go 1.24.2
 toolchain go1.24.3
 
 require (
-	github.com/goxkit/configs v0.1.0
-	github.com/goxkit/logging v0.1.0
+	github.com/goxkit/configs v0.2.1
+	github.com/goxkit/logging v0.1.1
 	github.com/joho/godotenv v1.5.1
 	go.uber.org/zap v1.27.0
 )
