@@ -1,4 +1,4 @@
-// Copyright (c) 2023, The GoKit Authors
+// Copyright (c) 2025, The GoKit Authors
 // MIT License
 // All rights reserved.
 
@@ -146,7 +146,7 @@ func (b *configsBuilder) Build() (*configs.Configs, error) {
 		return nil, err
 	}
 
-	cfgs.Logger = logger.(*zap.Logger)
+	cfgs.Logger = logger.(*zap.Logger).Sugar()
 
 	// Load component-specific configurations based on what was enabled
 	if b.http {
