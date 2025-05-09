@@ -1,7 +1,5 @@
 # Gokit Configs Builder
 
-[![pipeline](https://github.com/goxkit/configs_builder/actions/workflows/action.yml/badge.svg)](https://github.com/goxkit/configs_builder/actions/workflows/action.yml)
-
 <p align="center">
   <a href="https://github.com/goxkit/configs_builder/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License">
