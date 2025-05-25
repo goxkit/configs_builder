@@ -8,13 +8,12 @@
 package configsbuilder
 
 import (
+	"os"
+
 	"github.com/goxkit/configs"
 	"github.com/goxkit/logging"
-	"github.com/joho/godotenv"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
-
-	"github.com/goxkit/configs_builder/errors"
-	"github.com/goxkit/configs_builder/internal"
 )
 
 type (
@@ -23,12 +22,10 @@ type (
 	ConfigsBuilder interface {
 		// HTTP enables HTTP server configuration loading
 		HTTP() ConfigsBuilder
-		// Tracing enables OpenTelemetry tracing configuration loading
-		Tracing() ConfigsBuilder
-		// Metrics enables metrics configuration loading
-		Metrics() ConfigsBuilder
-		// SQLDatabase enables SQL database configuration loading
-		SQLDatabase() ConfigsBuilder
+		// Opentelemetry OTLP enables OpenTelemetry logging, tracing and metrics configuration
+		Otlp() ConfigsBuilder
+		// Postgres enables SQL database configuration loading
+		Postgres() ConfigsBuilder
 		// Identity enables identity/authentication configuration loading
 		Identity() ConfigsBuilder
 		// MQTT enables MQTT client configuration loading
@@ -48,9 +45,8 @@ type (
 		Err error
 
 		http     bool
-		tracing  bool
-		metrics  bool
-		sql      bool
+		otlp     bool
+		postgres bool
 		identity bool
 		mqtt     bool
 		rabbitmq bool
@@ -71,20 +67,14 @@ func (b *configsBuilder) HTTP() ConfigsBuilder {
 }
 
 // Tracing enables tracing configuration loading in the builder
-func (b *configsBuilder) Tracing() ConfigsBuilder {
-	b.tracing = true
-	return b
-}
-
-// Metrics enables metrics configuration loading in the builder
-func (b *configsBuilder) Metrics() ConfigsBuilder {
-	b.metrics = true
+func (b *configsBuilder) Otlp() ConfigsBuilder {
+	b.otlp = true
 	return b
 }
 
 // SQLDatabase enables SQL database configuration loading in the builder
-func (b *configsBuilder) SQLDatabase() ConfigsBuilder {
-	b.sql = true
+func (b *configsBuilder) Postgres() ConfigsBuilder {
+	b.postgres = true
 	return b
 }
 
@@ -122,23 +112,24 @@ func (b *configsBuilder) DynamoDB() ConfigsBuilder {
 // It reads environment variables, loads .env files, and constructs the configuration
 // based on the enabled features. Returns an error if any configuration fails to load.
 func (b *configsBuilder) Build() (*configs.Configs, error) {
-	// Determine the runtime environment
-	env := internal.ReadEnvironment()
-	if env == configs.UnknownEnv {
-		return nil, errors.ErrUnknownEnv
-	}
+	env := configs.NewEnvironment(os.Getenv("GO_ENV"))
 
-	// Load environment-specific .env file
-	err := dotEnvConfig(".env." + env.ToString())
+	v := viper.New()
+	v.SetConfigFile(env.EnvFile())
+	v.SetConfigType("env")
+	v.AutomaticEnv()
+	err := v.ReadInConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	cfgs := configs.Configs{}
+	cfgs := configs.Configs{Custom: v}
 
 	// Load application base configurations
-	cfgs.AppConfigs = internal.ReadAppConfigs()
-	cfgs.AppConfigs.GoEnv = env
+	err = v.Unmarshal(cfgs.AppConfigs)
+	if err != nil {
+		return nil, err
+	}
 
 	// Initialize the logger
 	logger, err := logging.NewDefaultLogger(&cfgs)
@@ -150,70 +141,68 @@ func (b *configsBuilder) Build() (*configs.Configs, error) {
 
 	// Load component-specific configurations based on what was enabled
 	if b.http {
-		cfgs.HTTPConfigs, err = internal.ReadHTTPConfigs()
+		err = v.Unmarshal(cfgs.HTTPConfigs)
 		if err != nil {
+			logger.Error("failed to unmarshal HTTP configs", zap.Error(err))
 			return nil, err
 		}
 	}
 
-	if b.metrics {
-		cfgs.MetricsConfigs, err = internal.ReadMetricsConfigs()
+	if b.otlp {
+		err = v.Unmarshal(cfgs.OTLPConfigs)
 		if err != nil {
+			logger.Error("failed to unmarshal OTLP configs", zap.Error(err))
 			return nil, err
 		}
 	}
 
-	if b.tracing {
-		cfgs.TracingConfigs, err = internal.ReadTracingConfigs()
+	if b.postgres {
+		err = v.Unmarshal(cfgs.PostgresConfigs)
 		if err != nil {
-			return nil, err
-		}
-	}
-
-	if b.sql {
-		cfgs.SQLConfigs, err = internal.ReadSQLDatabaseConfigs()
-		if err != nil {
+			logger.Error("failed to unmarshal Postgres configs", zap.Error(err))
 			return nil, err
 		}
 	}
 
 	if b.identity {
-		cfgs.IdentityConfigs, err = internal.ReadIdentityConfigs()
+		err = v.Unmarshal(cfgs.IdentityConfigs)
 		if err != nil {
+			logger.Error("failed to unmarshal Identity configs", zap.Error(err))
 			return nil, err
 		}
 	}
 
 	if b.mqtt {
-		cfgs.MQTTConfigs, err = internal.ReadMQTTConfigs()
+		err = v.Unmarshal(cfgs.MQTTConfigs)
 		if err != nil {
+			logger.Error("failed to unmarshal MQTT configs", zap.Error(err))
 			return nil, err
 		}
 	}
 
 	if b.rabbitmq {
-		cfgs.RabbitMQConfigs, err = internal.ReadRabbitMQConfigs()
+		err = v.Unmarshal(cfgs.RabbitMQConfigs)
 		if err != nil {
+			logger.Error("failed to unmarshal RabbitMQ configs", zap.Error(err))
 			return nil, err
 		}
 	}
 
 	if b.aws {
-		cfgs.AWSConfigs, err = internal.ReadAWSConfigs()
+		err = v.Unmarshal(cfgs.AWSConfigs)
 		if err != nil {
+			logger.Error("failed to unmarshal AWS configs", zap.Error(err))
 			return nil, err
 		}
 	}
 
 	if b.dynamoDB {
-		cfgs.DynamoDBConfigs, err = internal.ReadDynamoDBConfigs()
+		err = v.Unmarshal(cfgs.DynamoDBConfigs)
 		if err != nil {
+			logger.Error("failed to unmarshal Dynamo configs", zap.Error(err))
 			return nil, err
 		}
 	}
 
 	return &cfgs, nil
 }
-
-// dotEnvConfig is a variable containing the godotenv.Load function, which allows for testing
-var dotEnvConfig = godotenv.Load
