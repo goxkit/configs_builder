@@ -139,8 +139,15 @@ func (b *configsBuilder) Build() (*configs.Configs, error) {
 			return nil, err
 		}
 
-		//metrics
-		//tracing
+		// _, err = metrics.Install(&cfgs)
+		// if err != nil {
+		// 	return nil, err
+		// }
+
+		// _, err = tracing.Install(&cfgs)
+		// if err != nil {
+		// 	return nil, err
+		// }
 	}
 
 	if !b.otlp {
