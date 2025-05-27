@@ -12,6 +12,8 @@ import (
 
 	"github.com/goxkit/configs"
 	"github.com/goxkit/logging"
+	"github.com/goxkit/logging/noop"
+	"github.com/goxkit/logging/otlp"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
@@ -124,15 +126,29 @@ func (b *configsBuilder) Build() (*configs.Configs, error) {
 	}
 
 	cfgs := configs.Configs{Custom: v}
+	var logger logging.Logger
+
+	if b.otlp {
+		err = v.Unmarshal(cfgs.OTLPConfigs)
+		if err != nil {
+			return nil, err
+		}
+
+		logger, err = otlp.Install(&cfgs)
+		if err != nil {
+			return nil, err
+		}
+
+		//metrics
+		//tracing
+	}
+
+	if !b.otlp {
+		logger, _ = noop.Install(&cfgs)
+	}
 
 	// Load application base configurations
 	err = v.Unmarshal(cfgs.AppConfigs)
-	if err != nil {
-		return nil, err
-	}
-
-	// Initialize the logger
-	logger, err := logging.NewDefaultLogger(&cfgs)
 	if err != nil {
 		return nil, err
 	}
