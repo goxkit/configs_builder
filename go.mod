@@ -54,5 +54,5 @@ require (
 )
 
 replace github.com/goxkit/configs => ../configs
-
+replace github.com/goxkit/logging => ../logging
 replace github.com/goxkit/tracing => ../tracing
