@@ -1,4 +1,4 @@
-// Copyright (c) 2023, The GoKit Authors
+// Copyright (c) 2025, The GoKit Authors
 // MIT License
 // All rights reserved.
 
@@ -8,13 +8,15 @@
 package configsbuilder
 
 import (
-	"github.com/goxkit/configs"
-	"github.com/goxkit/logging"
-	"github.com/joho/godotenv"
-	"go.uber.org/zap"
+	"os"
+	"reflect"
 
-	"github.com/goxkit/configs_builder/errors"
-	"github.com/goxkit/configs_builder/internal"
+	"github.com/goxkit/configs"
+	noopLogging "github.com/goxkit/logging/noop"
+	otlpLogging "github.com/goxkit/logging/otlp"
+	otlpTracing "github.com/goxkit/tracing/otlp"
+	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 type (
@@ -23,12 +25,10 @@ type (
 	ConfigsBuilder interface {
 		// HTTP enables HTTP server configuration loading
 		HTTP() ConfigsBuilder
-		// Tracing enables OpenTelemetry tracing configuration loading
-		Tracing() ConfigsBuilder
-		// Metrics enables metrics configuration loading
-		Metrics() ConfigsBuilder
-		// SQLDatabase enables SQL database configuration loading
-		SQLDatabase() ConfigsBuilder
+		// Opentelemetry OTLP enables OpenTelemetry logging, tracing and metrics configuration
+		Otlp() ConfigsBuilder
+		// Postgres enables SQL database configuration loading
+		Postgres() ConfigsBuilder
 		// Identity enables identity/authentication configuration loading
 		Identity() ConfigsBuilder
 		// MQTT enables MQTT client configuration loading
@@ -48,9 +48,8 @@ type (
 		Err error
 
 		http     bool
-		tracing  bool
-		metrics  bool
-		sql      bool
+		otlp     bool
+		postgres bool
 		identity bool
 		mqtt     bool
 		rabbitmq bool
@@ -71,20 +70,14 @@ func (b *configsBuilder) HTTP() ConfigsBuilder {
 }
 
 // Tracing enables tracing configuration loading in the builder
-func (b *configsBuilder) Tracing() ConfigsBuilder {
-	b.tracing = true
-	return b
-}
-
-// Metrics enables metrics configuration loading in the builder
-func (b *configsBuilder) Metrics() ConfigsBuilder {
-	b.metrics = true
+func (b *configsBuilder) Otlp() ConfigsBuilder {
+	b.otlp = true
 	return b
 }
 
 // SQLDatabase enables SQL database configuration loading in the builder
-func (b *configsBuilder) SQLDatabase() ConfigsBuilder {
-	b.sql = true
+func (b *configsBuilder) Postgres() ConfigsBuilder {
+	b.postgres = true
 	return b
 }
 
@@ -122,98 +115,197 @@ func (b *configsBuilder) DynamoDB() ConfigsBuilder {
 // It reads environment variables, loads .env files, and constructs the configuration
 // based on the enabled features. Returns an error if any configuration fails to load.
 func (b *configsBuilder) Build() (*configs.Configs, error) {
-	// Determine the runtime environment
-	env := internal.ReadEnvironment()
-	if env == configs.UnknownEnv {
-		return nil, errors.ErrUnknownEnv
-	}
-
-	// Load environment-specific .env file
-	err := dotEnvConfig(".env." + env.ToString())
+	cfgs, err := b.newConfigs()
 	if err != nil {
 		return nil, err
 	}
 
-	cfgs := configs.Configs{}
-
-	// Load application base configurations
-	cfgs.AppConfigs = internal.ReadAppConfigs()
-	cfgs.AppConfigs.GoEnv = env
-
-	// Initialize the logger
-	logger, err := logging.NewDefaultLogger(&cfgs)
-	if err != nil {
+	if err := b.setupObservability(cfgs); err != nil {
 		return nil, err
 	}
-
-	cfgs.Logger = logger.(*zap.Logger)
 
 	// Load component-specific configurations based on what was enabled
 	if b.http {
-		cfgs.HTTPConfigs, err = internal.ReadHTTPConfigs()
+		cfgs.HTTPConfigs = &configs.HTTPConfigs{}
+		b.loadStructDefaults(cfgs.Custom, cfgs.HTTPConfigs)
+		err = cfgs.Custom.Unmarshal(cfgs.HTTPConfigs)
 		if err != nil {
+			cfgs.Logger.Error("failed to unmarshal HTTP configs", zap.Error(err))
 			return nil, err
 		}
 	}
 
-	if b.metrics {
-		cfgs.MetricsConfigs, err = internal.ReadMetricsConfigs()
+	if b.postgres {
+		cfgs.PostgresConfigs = &configs.PostgresConfigs{}
+		b.loadStructDefaults(cfgs.Custom, cfgs.PostgresConfigs)
+		err = cfgs.Custom.Unmarshal(cfgs.PostgresConfigs)
 		if err != nil {
-			return nil, err
-		}
-	}
-
-	if b.tracing {
-		cfgs.TracingConfigs, err = internal.ReadTracingConfigs()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if b.sql {
-		cfgs.SQLConfigs, err = internal.ReadSQLDatabaseConfigs()
-		if err != nil {
+			cfgs.Logger.Error("failed to unmarshal Postgres configs", zap.Error(err))
 			return nil, err
 		}
 	}
 
 	if b.identity {
-		cfgs.IdentityConfigs, err = internal.ReadIdentityConfigs()
+		cfgs.IdentityConfigs = &configs.IdentityConfigs{}
+		b.loadStructDefaults(cfgs.Custom, cfgs.IdentityConfigs)
+		err = cfgs.Custom.Unmarshal(cfgs.IdentityConfigs)
 		if err != nil {
+			cfgs.Logger.Error("failed to unmarshal Identity configs", zap.Error(err))
 			return nil, err
 		}
 	}
 
 	if b.mqtt {
-		cfgs.MQTTConfigs, err = internal.ReadMQTTConfigs()
+		cfgs.MQTTConfigs = &configs.MQTTConfigs{}
+		b.loadStructDefaults(cfgs.Custom, cfgs.MQTTConfigs)
+		err = cfgs.Custom.Unmarshal(cfgs.MQTTConfigs)
 		if err != nil {
+			cfgs.Logger.Error("failed to unmarshal MQTT configs", zap.Error(err))
 			return nil, err
 		}
 	}
 
 	if b.rabbitmq {
-		cfgs.RabbitMQConfigs, err = internal.ReadRabbitMQConfigs()
+		cfgs.RabbitMQConfigs = &configs.RabbitMQConfigs{}
+		b.loadStructDefaults(cfgs.Custom, cfgs.RabbitMQConfigs)
+		err = cfgs.Custom.Unmarshal(cfgs.RabbitMQConfigs)
 		if err != nil {
+			cfgs.Logger.Error("failed to unmarshal RabbitMQ configs", zap.Error(err))
 			return nil, err
 		}
 	}
 
 	if b.aws {
-		cfgs.AWSConfigs, err = internal.ReadAWSConfigs()
+		cfgs.AWSConfigs = &configs.AWSConfigs{}
+		b.loadStructDefaults(cfgs.Custom, cfgs.AWSConfigs)
+		err = cfgs.Custom.Unmarshal(cfgs.AWSConfigs)
 		if err != nil {
+			cfgs.Logger.Error("failed to unmarshal AWS configs", zap.Error(err))
 			return nil, err
 		}
 	}
 
 	if b.dynamoDB {
-		cfgs.DynamoDBConfigs, err = internal.ReadDynamoDBConfigs()
+		cfgs.DynamoDBConfigs = &configs.DynamoDBConfigs{}
+		b.loadStructDefaults(cfgs.Custom, cfgs.DynamoDBConfigs)
+		err = cfgs.Custom.Unmarshal(cfgs.DynamoDBConfigs)
 		if err != nil {
+			cfgs.Logger.Error("failed to unmarshal Dynamo configs", zap.Error(err))
 			return nil, err
 		}
 	}
 
-	return &cfgs, nil
+	return cfgs, nil
 }
 
-// dotEnvConfig is a variable containing the godotenv.Load function, which allows for testing
-var dotEnvConfig = godotenv.Load
+func (b *configsBuilder) newConfigs() (*configs.Configs, error) {
+	v, err := b.setupViper()
+	if err != nil {
+		return nil, err
+	}
+
+	appConfigs := &configs.AppConfigs{}
+	b.loadStructDefaults(v, appConfigs)
+	err = v.Unmarshal(appConfigs)
+	if err != nil {
+		return nil, err
+	}
+
+	otlpConfigs := &configs.OTLPConfigs{}
+	b.loadStructDefaults(v, otlpConfigs)
+	err = v.Unmarshal(otlpConfigs)
+	if err != nil {
+		return nil, err
+	}
+
+	return &configs.Configs{
+		AppConfigs:  appConfigs,
+		OTLPConfigs: otlpConfigs,
+		Custom:      v,
+	}, nil
+}
+
+func (c *configsBuilder) setupViper() (*viper.Viper, error) {
+	env := configs.NewEnvironment(os.Getenv("GO_ENV"))
+
+	v := viper.New()
+	v.SetConfigFile(env.EnvFile())
+	v.SetConfigType("env")
+	v.AutomaticEnv()
+	err := v.ReadInConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
+func (b *configsBuilder) setupObservability(cfgs *configs.Configs) error {
+	var err error
+
+	if b.otlp {
+		cfgs.Logger, err = otlpLogging.Install(cfgs)
+		if err != nil {
+			cfgs.Logger.Error("failed to install OTLP logger", zap.Error(err))
+			return err
+		}
+
+		_, err = otlpTracing.Install(cfgs)
+		if err != nil {
+			cfgs.Logger.Error("failed to install OTLP tracing", zap.Error(err))
+			return err
+		}
+
+		// _, err = otlpMetrics.Install(&cfgs)
+		// if err != nil {
+		// 	return nil, err
+		// }
+
+		return nil
+	}
+
+	cfgs.Logger, err = noopLogging.Install(cfgs)
+	if err != nil {
+		cfgs.Logger.Error("failed to install Noop logger", zap.Error(err))
+		return err
+	}
+
+	return nil
+}
+
+// loadStructDefaults takes a struct and loads default values defined in 'default' tags
+// into the specified Viper instance. This allows setting defaults directly in struct tags.
+func (c *configsBuilder) loadStructDefaults(v *viper.Viper, structPtr interface{}) {
+	// Get the reflect Value and Type of the struct
+	val := reflect.ValueOf(structPtr)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+
+	// Must be a struct
+	if val.Kind() != reflect.Struct {
+		return
+	}
+
+	typ := val.Type()
+
+	// Iterate through all fields in the struct
+	for i := 0; i < val.NumField(); i++ {
+		field := typ.Field(i)
+
+		// Get the default tag if it exists
+		defaultVal, ok := field.Tag.Lookup("default")
+		if !ok || defaultVal == "" {
+			continue
+		}
+
+		// Get the mapstructure tag which defines how viper maps the environment variable
+		envKey, ok := field.Tag.Lookup("mapstructure")
+		if !ok || envKey == "" {
+			continue
+		}
+
+		// Set the default value in Viper
+		v.SetDefault(envKey, defaultVal)
+	}
+}
