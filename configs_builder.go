@@ -14,6 +14,7 @@ import (
 	"github.com/goxkit/configs"
 	noopLogging "github.com/goxkit/logging/noop"
 	otlpLogging "github.com/goxkit/logging/otlp"
+	otlpMetrics "github.com/goxkit/metrics/otlp"
 	otlpTracing "github.com/goxkit/tracing/otlp"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -256,10 +257,10 @@ func (b *configsBuilder) setupObservability(cfgs *configs.Configs) error {
 			return err
 		}
 
-		// _, err = otlpMetrics.Install(&cfgs)
-		// if err != nil {
-		// 	return nil, err
-		// }
+		_, err = otlpMetrics.Install(cfgs)
+		if err != nil {
+			return err
+		}
 
 		return nil
 	}
